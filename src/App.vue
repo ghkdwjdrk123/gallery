@@ -7,12 +7,31 @@
 <script>
 
 
-import Footer from "@/pages/Footer.vue";
-import Header from "@/pages/Header.vue";
+import Footer from "@/components/Footer.vue";
+import Header from "@/components/Header.vue";
+import store from "@/scripts/store";
+import axios from "axios";
+import {useRoute} from "vue-router";
+import {watch} from "vue";
 
 export default {
   name: 'App',
   components: {Header, Footer},
+  setup() {
+    const check = () => {
+      axios.get("/api/account/check").then(({data}) => {
+        console.log(data);
+
+        store.commit("setAccount", data || 0);
+      })
+    }
+
+    const route = useRoute();
+
+    watch(route, () => {
+      check();
+    });
+  }
 }
 </script>
 
