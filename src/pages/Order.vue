@@ -1,5 +1,5 @@
 <template>
-  <div class="cart">
+  <div class="order">
     <div class="container">
       <div>
         <div class="py-5 text-center"><h2>주문하기</h2></div>
@@ -7,7 +7,7 @@
           <div class="col-md-5 col-lg-4 order-md-last"><h4
               class="d-flex justify-content-between align-items-center mb-3"><span
               class="text-primary">주문 목록</span><span
-              class="badge bg-primary rounded-pill">{{ totalCount }}</span></h4>
+              class="badge bg-primary rounded-pill">{{ state.items.length }}</span></h4>
             <ul class="list-group mb-3">
               <li class="list-group-item d-flex justify-content-between lh-sm" v-for="(i, idx) in state.items"
                   :key="idx">
@@ -20,7 +20,7 @@
                   </small>
                 </div>
                 <span class="text-muted">
-                  {{ lib.getNumberFormatted(i.price * (1 - i.discountPer/100)) }}원
+                  {{ lib.getNumberFormatted(i.price * (1 - i.discountPer / 100)) }}원
                 </span>
               </li>
             </ul>
@@ -32,38 +32,51 @@
             <form class="needs-validation" novalidate="">
               <div class="row g-3">
                 <div class="col-12"><label for="username" class="form-label">이름</label>
-                  <div class="input-group has-validation"><input type="text"
-                                                                 class="form-control"
-                                                                 id="username"
-                                                                 placeholder="Username"
-                                                                 required="">
+                  <div class="input-group has-validation">
+                    <input type="text"
+                           class="form-control"
+                           id="username"
+                           required=""
+                           v-model="state.form.name">
                   </div>
                 </div>
-                <div class="col-12"><label for="address" class="form-label">주소</label><input type="text"
-                                                                                             class="form-control"
-                                                                                             id="address"
-                                                                                             placeholder="1234 Main St"
-                                                                                             required="">
+                <div class="col-12"><label for="address" class="form-label">주소</label>
+                  <input type="text"
+                         class="form-control"
+                         id="address"
+                         required=""
+                         v-model="state.form.address">
                 </div>
               </div>
               <hr class="my-4">
               <h4 class="mb-3">결제 수단</h4>
               <div class="my-3">
-                <div class="form-check"><input id="credit" name="paymentMethod" type="radio" class="form-check-input"
-                                               checked="" required="">
-                  <label class="form-check-label" for="credit">
+                <div class="form-check">
+                  <input id="card" name="paymentMethod" type="radio" class="form-check-input"
+                         value="card"
+                         v-model="state.form.payment">
+                  <label class="form-check-label" for="card">
                     신용카드
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input id="bank" name="paymentMethod" type="radio" class="form-check-input"
+                         value="bank"
+                         v-model="state.form.payment">
+                  <label class="form-check-label" for="bank">
+                    무통장입금
                   </label>
                 </div>
               </div>
               <div class="row gy-3">
-                <div class="col-md-12"><label for="cc-number" class="form-label">Credit card number</label><input
-                    type="text" class="form-control" id="cc-number" placeholder="" required="">
-                  <div class="invalid-feedback"> Credit card number is required</div>
+                <div class="col-md-12"><label for="cc-number" class="form-label">Credit card number</label>
+                  <input
+                      type="text" class="form-control" id="cc-number"
+                      v-model="state.form.cardNumber">
                 </div>
               </div>
               <hr class="my-4">
-              <button class="w-100 btn btn-primary btn-lg" type="submit">결제하기</button>
+              <button class="w-100 btn btn-primary btn-lg" @click="submit()">결제하기</button>
             </form>
           </div>
         </div>
@@ -76,12 +89,20 @@
 import {computed, reactive} from "vue";
 import axios from "axios";
 import lib from "@/scripts/lib";
+import router from "@/scripts/router";
 
 
 export default {
   setup() {
     const state = reactive({
-      items: []
+      items: [],
+      form: {
+        name: "",
+        address: "",
+        payment: "",
+        cardNumber: "",
+        items: "",
+      }
     })
 
     const load = () => {
@@ -94,27 +115,27 @@ export default {
     const computedPrice = computed(() => {
       let result = 0;
 
-      for(let i of state.items) {
-        result += i.price * (1 - i.discountPer/100);
+      for (let i of state.items) {
+        result += i.price * (1 - i.discountPer / 100);
       }
 
       return result;
     })
 
-    const totalCount = computed(() => {
-      let count = 0;
+    const submit = () => {
+      const args = JSON.parse(JSON.stringify(state.form));
+      args.items = JSON.stringify(state.items);
 
-      for(let i of state.items) {
-        i;
-        count++;
-      }
-
-      return count;
-    })
+      axios.post("/api/orders", args).then(() => {
+        console.log('purchase success');
+        alert("주문 완료하였습니다!");
+        router.push("/orders");
+      })
+    }
 
     load();
 
-    return {state, lib, computedPrice, totalCount}
+    return {state, lib, computedPrice, submit}
   }
 
 }
